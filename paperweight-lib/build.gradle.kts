@@ -4,6 +4,7 @@ plugins {
 
 repositories {
     gradlePluginPortal()
+    maven("https://maven.fabricmc.net/")
 }
 
 dependencies {
@@ -16,6 +17,7 @@ dependencies {
     implementation(libs.bundles.hypo)
     implementation(libs.slf4j.jdk14) // slf4j impl for hypo
     implementation(libs.bundles.cadix)
+    implementation(libs.aw)
 
     implementation(libs.lorenzTiny)
 

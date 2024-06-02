@@ -9,6 +9,7 @@ dependencies {
     implementation(variantOf(libs.diffpatch) { classifier("all") }) {
         isTransitive = false
     }
+    compileOnly(libs.bundles.cadix)
 }
 
 gradlePlugin {

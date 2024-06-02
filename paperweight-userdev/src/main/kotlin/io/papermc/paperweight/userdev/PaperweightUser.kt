@@ -102,7 +102,7 @@ abstract class PaperweightUser : Plugin<Project> {
             target.dependencies
         )
 
-        createConfigurations(target, target.provider { userdevSetup })
+        createConfigurations(target, target.provider { userdevSetup }, userdev)
 
         val reobfJar by target.tasks.registering<RemapJar> {
             group = "paperweight"
@@ -223,7 +223,8 @@ abstract class PaperweightUser : Plugin<Project> {
 
     private fun createConfigurations(
         target: Project,
-        userdevSetup: Provider<UserdevSetup>
+        userdevSetup: Provider<UserdevSetup>,
+        userdev: PaperweightUserExtension
     ) {
         target.configurations.register(DECOMPILER_CONFIG) {
             defaultDependencies {
@@ -263,7 +264,7 @@ abstract class PaperweightUser : Plugin<Project> {
 
         val mojangMappedServerConfig = target.configurations.register(MOJANG_MAPPED_SERVER_CONFIG) {
             defaultDependencies {
-                val ctx = createContext(target)
+                val ctx = createContext(target, userdev.awPath.orNull?.path)
                 userdevSetup.get().let { setup ->
                     setup.createOrUpdateIvyRepository(ctx)
                     setup.populateCompileConfiguration(ctx, this)
@@ -284,7 +285,7 @@ abstract class PaperweightUser : Plugin<Project> {
 
         target.configurations.register(MOJANG_MAPPED_SERVER_RUNTIME_CONFIG) {
             defaultDependencies {
-                val ctx = createContext(target)
+                val ctx = createContext(target, userdev.awPath.orNull?.path)
                 userdevSetup.get().let { setup ->
                     setup.createOrUpdateIvyRepository(ctx)
                     setup.populateRuntimeConfiguration(ctx, this)
@@ -293,8 +294,8 @@ abstract class PaperweightUser : Plugin<Project> {
         }
     }
 
-    private fun createContext(project: Project): SetupHandler.Context =
-        SetupHandler.Context(project, workerExecutor, javaToolchainService)
+    private fun createContext(project: Project, awPath: Path?): SetupHandler.Context =
+        SetupHandler.Context(project, workerExecutor, javaToolchainService, awPath)
 
     private fun createSetup(target: Project, sharedCacheRoot: Path): UserdevSetup {
         val bundleConfig = target.configurations.named(DEV_BUNDLE_CONFIG)

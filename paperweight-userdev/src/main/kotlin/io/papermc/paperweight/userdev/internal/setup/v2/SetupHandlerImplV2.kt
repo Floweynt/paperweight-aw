@@ -55,6 +55,7 @@ class SetupHandlerImplV2(
     private val mappedMinecraftServerJar: Path = cache.resolve(paperSetupOutput("mappedMinecraftServerJar", "jar"))
     private val fixedMinecraftServerJar: Path = cache.resolve(paperSetupOutput("fixedMinecraftServerJar", "jar"))
     private val accessTransformedServerJar: Path = cache.resolve(paperSetupOutput("accessTransformedServerJar", "jar"))
+    private val userAwTransformedServerJar: Path = cache.resolve(paperSetupOutput("userAwTransformedServerJar", "jar"))
     private val decompiledMinecraftServerJar: Path = cache.resolve(paperSetupOutput("decompileMinecraftServerJar", "jar"))
     private val patchedSourcesJar: Path = cache.resolve(paperSetupOutput("patchedSourcesJar", "jar"))
     private val mojangMappedPaperJar: Path = cache.resolve(paperSetupOutput("applyMojangMappedPaperclipPatch", "jar"))
@@ -98,10 +99,25 @@ class SetupHandlerImplV2(
             mojangPlusYarnMappings,
         )
 
+        val remapSource: Path
+        val userAwStep: AccessTransformMinecraftUser?
+
+        if (context.userAw != null) {
+            userAwStep = AccessTransformMinecraftUser(
+                context.userAw,
+                filteredVanillaServerJar,
+                userAwTransformedServerJar,
+            )
+            remapSource = userAwTransformedServerJar
+        } else {
+            userAwStep = null
+            remapSource = filteredVanillaServerJar
+        }
+
         val remapMinecraftStep = RemapMinecraft.create(
             context,
             bundle.config.remap.args,
-            filteredVanillaServerJar,
+            remapSource,
             ::minecraftLibraryJars,
             mojangPlusYarnMappings,
             mappedMinecraftServerJar,
@@ -136,17 +152,28 @@ class SetupHandlerImplV2(
             patchedSourcesJar
         )
 
+        val steps = mutableListOf(
+            downloadMcLibs,
+            filterVanillaJarStep,
+            genMappingsStep
+        )
+
+        if (userAwStep != null) {
+            steps.add(userAwStep)
+        }
+
+        steps.addAll(listOf(
+            decomp,
+            applyDevBundlePatchesStep,
+            remapMinecraftStep,
+            fixStep,
+            atStep
+        ))
+
         StepExecutor.executeSteps(
             bundle.changed,
             context,
-            downloadMcLibs,
-            filterVanillaJarStep,
-            genMappingsStep,
-            remapMinecraftStep,
-            fixStep,
-            atStep,
-            decomp,
-            applyDevBundlePatchesStep,
+            *steps.toTypedArray()
         )
 
         applyMojangMappedPaperclipPatch(context)

@@ -16,6 +16,7 @@ if (noRelocate) {
     }
 }
 
+val group: String by project
 val shade: Configuration by configurations.creating
 configurations.implementation {
     extendsFrom(shade)
@@ -49,7 +50,7 @@ gradlePlugin {
     website.set("https://github.com/PaperMC/paperweight")
     vcsUrl.set("https://github.com/PaperMC/paperweight")
     plugins.create("paperweight-$prefix") {
-        id = "io.papermc.paperweight." + prefix
+        id = "$group.$prefix"
         displayName = "paperweight $prefix"
         tags.set(listOf("paper", "minecraft"))
     }
@@ -93,9 +94,11 @@ val shadowJar by tasks.existing(ShadowJar::class) {
 
 publishing {
     repositories {
-        maven("https://repo.papermc.io/repository/maven-snapshots/") {
-            credentials(PasswordCredentials::class)
-            name = "paper"
+        maven("https://maven.floweytf.com/releases/") {
+            credentials {
+                username = System.getenv("MAVEN_USERNAME")
+                password = System.getenv("MAVEN_PASSWORD")
+            }
         }
     }
 

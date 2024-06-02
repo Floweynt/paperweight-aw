@@ -52,8 +52,10 @@ class SetupHandlerImpl(
     private val mappedMinecraftServerJar: Path = cache.resolve(paperSetupOutput("mappedMinecraftServerJar", "jar"))
     private val fixedMinecraftServerJar: Path = cache.resolve(paperSetupOutput("fixedMinecraftServerJar", "jar"))
     private val accessTransformedServerJar: Path = cache.resolve(paperSetupOutput("accessTransformedServerJar", "jar"))
+    private val userAwTransformedServerJar: Path = cache.resolve(paperSetupOutput("userAwTransformedServerJar", "jar"))
     private val decompiledMinecraftServerJar: Path = cache.resolve(paperSetupOutput("decompileMinecraftServerJar", "jar"))
     private val patchedSourcesJar: Path = cache.resolve(paperSetupOutput("patchedSourcesJar", "jar"))
+    private val mojangMappedPaperPreAwJar: Path = cache.resolve(paperSetupOutput("applyMojangMappedPaperclipPatchPreAw", "jar"))
     private val mojangMappedPaperJar: Path = cache.resolve(paperSetupOutput("applyMojangMappedPaperclipPatch", "jar"))
 
     private fun minecraftLibraryJars(): List<Path> = minecraftLibraryJars.filesMatchingRecursive("*.jar")
@@ -83,7 +85,22 @@ class SetupHandlerImpl(
             cache,
         )
 
-        val fixStep = FixMinecraftJar(mappedMinecraftServerJar, fixedMinecraftServerJar, vanillaServerJar)
+        val fixMcInputJar: Path
+        val userAwStep: AccessTransformMinecraftUser?
+
+        if (context.userAw != null) {
+            userAwStep = AccessTransformMinecraftUser(
+                context.userAw,
+                mappedMinecraftServerJar,
+                userAwTransformedServerJar,
+            )
+            fixMcInputJar = userAwTransformedServerJar
+        } else {
+            userAwStep = null
+            fixMcInputJar = mappedMinecraftServerJar
+        }
+
+        val fixStep = FixMinecraftJar(fixMcInputJar, fixedMinecraftServerJar, vanillaServerJar)
 
         val atStep = AccessTransformMinecraft(
             bundle.dir.resolve(bundle.config.buildData.accessTransformFile),
@@ -106,17 +123,28 @@ class SetupHandlerImpl(
             patchedSourcesJar
         )
 
-        StepExecutor.executeSteps(
-            bundle.changed,
-            context,
+        val steps = mutableListOf(
             extractStep,
             filterVanillaJarStep,
             genMappingsStep,
             remapMinecraftStep,
+        )
+
+        if (userAwStep != null) {
+            steps.add(userAwStep)
+        }
+
+        steps.addAll(listOf(
             fixStep,
             atStep,
             decomp,
             applyDevBundlePatchesStep,
+        ))
+
+        StepExecutor.executeSteps(
+            bundle.changed,
+            context,
+            *steps.toTypedArray()
         )
     }
 
@@ -129,17 +157,39 @@ class SetupHandlerImpl(
             return
         }
 
-        lockSetup(cache, true) {
-            StepExecutor.executeStep(
-                context,
-                RunPaperclip(
-                    bundle.dir.resolve(bundle.config.buildData.mojangMappedPaperclipFile),
-                    mojangMappedPaperJar,
-                    vanillaSteps.mojangJar,
-                    minecraftVersion,
+        if(context.userAw != null) {
+
+            lockSetup(cache, true) {
+                StepExecutor.executeSteps(
+                    true,
+                    context,
+                    RunPaperclip(
+                        bundle.dir.resolve(bundle.config.buildData.mojangMappedPaperclipFile),
+                        mojangMappedPaperPreAwJar,
+                        vanillaSteps.mojangJar,
+                        minecraftVersion,
+                    ),
+                    AccessTransformMinecraftUser(
+                        context.userAw,
+                        mojangMappedPaperPreAwJar,
+                        mojangMappedPaperJar,
+                    )
                 )
-            )
+            }
+        } else {
+            lockSetup(cache, true) {
+                StepExecutor.executeStep(
+                    context,
+                    RunPaperclip(
+                        bundle.dir.resolve(bundle.config.buildData.mojangMappedPaperclipFile),
+                        mojangMappedPaperJar,
+                        vanillaSteps.mojangJar,
+                        minecraftVersion,
+                    )
+                )
+            }
         }
+
     }
 
     private var setupCompleted = false

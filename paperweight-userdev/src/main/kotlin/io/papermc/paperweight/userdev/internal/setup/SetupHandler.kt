@@ -65,7 +65,8 @@ interface SetupHandler {
     data class Context(
         val project: Project,
         val workerExecutor: WorkerExecutor,
-        val javaToolchainService: JavaToolchainService
+        val javaToolchainService: JavaToolchainService,
+        val userAw: Path?
     ) {
         val defaultJavaLauncher: JavaLauncher
             get() = javaToolchainService.defaultJavaLauncher(project).get()

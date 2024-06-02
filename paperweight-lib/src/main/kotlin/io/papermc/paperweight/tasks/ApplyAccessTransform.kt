@@ -22,6 +22,7 @@
 
 package io.papermc.paperweight.tasks
 
+import io.papermc.paperweight.AW_ACCESS_TRANSFORMER
 import io.papermc.paperweight.util.*
 import java.nio.file.Path
 import javax.inject.Inject
@@ -30,6 +31,7 @@ import org.cadixdev.at.AccessChange
 import org.cadixdev.at.AccessTransform
 import org.cadixdev.at.AccessTransformSet
 import org.cadixdev.at.ModifierChange
+import org.cadixdev.at.io.AccessTransformFormat
 import org.cadixdev.at.io.AccessTransformFormats
 import org.cadixdev.atlas.Atlas
 import org.cadixdev.atlas.AtlasTransformerContext
@@ -41,6 +43,7 @@ import org.cadixdev.bombe.jar.JarEntryTransformer
 import org.cadixdev.bombe.type.signature.MethodSignature
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
 import org.gradle.jvm.toolchain.JavaLauncher
 import org.gradle.kotlin.dsl.*
@@ -61,7 +64,8 @@ fun applyAccessTransform(
     atFilePath: Path,
     jvmArgs: List<String> = listOf("-Xmx1G"),
     workerExecutor: WorkerExecutor,
-    launcher: JavaLauncher
+    launcher: JavaLauncher,
+    format: String = "forge"
 ): WorkQueue {
     ensureParentExists(outputJarPath)
     ensureDeleted(outputJarPath)
@@ -75,10 +79,16 @@ fun applyAccessTransform(
         inputJar.set(inputJarPath)
         atFile.set(atFilePath)
         outputJar.set(outputJarPath)
+        atFormat.set(format)
     }
 
     return queue
 }
+
+val atFormatByName = mapOf(
+    "forge" to AccessTransformFormats.FML,
+    "fabric" to AW_ACCESS_TRANSFORMER
+)
 
 @CacheableTask
 abstract class ApplyAccessTransform : JavaLauncherTask() {
@@ -120,7 +130,7 @@ abstract class ApplyAccessTransform : JavaLauncherTask() {
 
     abstract class AtlasAction : WorkAction<AtlasParameters> {
         override fun execute() {
-            val at = AccessTransformFormats.FML.read(parameters.atFile.path)
+            val at = atFormatByName[parameters.atFormat.get()]!!.read(parameters.atFile.path)
 
             Atlas().apply {
                 install {
@@ -149,6 +159,7 @@ abstract class ApplyAccessTransform : JavaLauncherTask() {
         val inputJar: RegularFileProperty
         val atFile: RegularFileProperty
         val outputJar: RegularFileProperty
+        val atFormat: Property<String>
     }
 }
 

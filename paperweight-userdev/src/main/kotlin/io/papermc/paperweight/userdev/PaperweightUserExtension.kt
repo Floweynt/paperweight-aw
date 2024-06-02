@@ -64,6 +64,8 @@ abstract class PaperweightUserExtension(
     val reobfArtifactConfiguration: Property<ReobfArtifactConfiguration> = objects.property<ReobfArtifactConfiguration>()
         .convention(ReobfArtifactConfiguration.REOBF_PRODUCTION)
 
+    val awPath = objects.fileProperty()
+
     /**
      * Provides a runnable Mojang mapped server jar, extracted from the current dev bundle.
      */
@@ -73,7 +75,7 @@ abstract class PaperweightUserExtension(
         level = DeprecationLevel.WARNING
     )
     val mojangMappedServerJar: Provider<RegularFile> = objects.fileProperty().pathProvider(
-        setup.map { it.serverJar(SetupHandler.Context(project, workerExecutor, javaToolchainService)) }
+        setup.map { it.serverJar(SetupHandler.Context(project, workerExecutor, javaToolchainService, awPath.orNull?.path)) }
     ).withDisallowChanges().withDisallowUnsafeRead()
 
     /**
