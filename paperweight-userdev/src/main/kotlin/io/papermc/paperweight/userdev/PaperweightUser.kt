@@ -29,7 +29,10 @@ import io.papermc.paperweight.userdev.attribute.Obfuscation
 import io.papermc.paperweight.userdev.internal.JunitExclusionRule
 import io.papermc.paperweight.userdev.internal.setup.SetupHandler
 import io.papermc.paperweight.userdev.internal.setup.UserdevSetup
-import io.papermc.paperweight.userdev.internal.setup.util.*
+import io.papermc.paperweight.userdev.internal.setup.util.cleanSharedCaches
+import io.papermc.paperweight.userdev.internal.setup.util.genSources
+import io.papermc.paperweight.userdev.internal.setup.util.paperweightHash
+import io.papermc.paperweight.userdev.internal.setup.util.sharedCaches
 import io.papermc.paperweight.util.*
 import io.papermc.paperweight.util.constants.*
 import java.nio.file.Path
@@ -167,6 +170,8 @@ abstract class PaperweightUser : Plugin<Project> {
 
             cleanSharedCaches(this, sharedCacheRoot)
         }
+
+        target.tasks.create("remapAccessWidener", RemapAccessWidenerTask::class.java).group = "ignite"
     }
 
     private fun Project.decorateJarManifests() {

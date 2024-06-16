@@ -3,6 +3,7 @@ asm = "9.7"
 lorenz = "0.5.8"
 hypo = "1.2.4"
 aw = "2.1.0"
+tiny-remapper = "0.10.1"
 
 [libraries]
 asm-core = { module = "org.ow2.asm:asm", version.ref = "asm" }
@@ -32,6 +33,8 @@ lorenzTiny = "net.fabricmc:lorenz-tiny:3.0.0"
 jbsdiff = "io.sigpipe:jbsdiff:1.0"
 
 diffpatch = "codechicken:DiffPatch:1.5.0.29"
+
+tiny-remapper = { module = "net.fabricmc:tiny-remapper", version.ref = "tiny-remapper" }
 
 # Gradle
 gradle-licenser = "net.kyori:indra-licenser-spotless:3.1.3"

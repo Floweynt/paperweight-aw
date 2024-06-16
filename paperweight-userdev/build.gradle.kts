@@ -5,7 +5,11 @@ plugins {
 
 dependencies {
     shade(projects.paperweightLib)
+    shade(libs.tiny.remapper)
+
     implementation(libs.bundles.kotson)
+    implementation(libs.tiny.remapper)
+    compileOnly(libs.aw)
     implementation(variantOf(libs.diffpatch) { classifier("all") }) {
         isTransitive = false
     }
