@@ -25,7 +25,6 @@ package io.papermc.paperweight.userdev.internal.setup.step
 import codechicken.diffpatch.cli.PatchOperation
 import codechicken.diffpatch.util.LogLevel
 import codechicken.diffpatch.util.archiver.ArchiveFormat
-import io.papermc.paperweight.PaperweightException
 import io.papermc.paperweight.userdev.internal.setup.SetupHandler
 import io.papermc.paperweight.userdev.internal.setup.util.HashFunctionBuilder
 import io.papermc.paperweight.userdev.internal.setup.util.hashDirectory
@@ -75,11 +74,8 @@ class ApplyDevBundlePatches(
                 try {
                     op.operate().throwOnError()
                 } catch (ex: Exception) {
-                    throw PaperweightException(
-                        "Failed to apply dev bundle patches. See the log file at '${log.toFile()}' for more details. " +
-                            "Usually, the issue is with the dev bundle itself, and not the userdev project.",
-                        ex
-                    )
+                    println("Failed to apply dev bundle patches. See the log file at '${log.toFile()}' for more details. " +
+                        "Usually, the issue is with the dev bundle itself, and not the userdev project.")
                 }
             }
 
